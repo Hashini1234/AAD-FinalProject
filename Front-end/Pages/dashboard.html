@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Dashboard</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+    <style>
+        .dash-grid { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+        .activity-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid rgba(14,165,160,0.08); }
+        .activity-item:last-child { border:none; }
+        .activity-dot { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+        .activity-dot.green { background:var(--emerald); }
+        .activity-dot.amber { background:var(--amber); }
+        .activity-dot.red   { background:var(--coral); }
+        .activity-dot.blue  { background:var(--wave-cyan); }
+        .quick-action { display:flex; flex-direction:column; align-items:center; gap:8px; padding:20px; background:var(--glass);
+            border:1px solid var(--border); border-radius:var(--radius-md); cursor:pointer; transition:var(--transition);
+            text-decoration:none; }
+        .quick-action:hover { border-color:var(--wave-teal); background:rgba(14,165,160,0.1); transform:translateY(-2px); }
+        .quick-action .qa-icon { font-size:28px; }
+        .quick-action .qa-label { font-size:12px; font-weight:600; color:var(--text-muted); text-align:center; }
+        .quick-actions-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+        .pending-item { display:flex; align-items:center; justify-content:space-between; padding:12px 16px;
+            background:rgba(255,255,255,0.03); border-radius:var(--radius-sm); margin-bottom:8px; }
+        @media(max-width:900px){ .dash-grid{grid-template-columns:1fr;} .quick-actions-grid{grid-template-columns:repeat(2,1fr);} }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <h1>Dashboard</h1>
+                <div class="breadcrumb">Welcome back, Admin 👋</div>
+            </div>
+            <div class="header-actions">
+                <span class="text-muted text-sm text-mono" id="curDate"></span>
+                <button class="btn btn-primary btn-sm" onclick="window.location.href='bookings.html'">+ New Booking</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <!-- Stats -->
+            <div class="stats-row" id="statsRow"></div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-4" style="margin-bottom:20px;">
+                <div class="card-header"><span class="card-title">Quick Actions</span></div>
+                <div class="card-body">
+                    <div class="quick-actions-grid">
+                        <a class="quick-action" href="bookings.html"><span class="qa-icon">📅</span><span class="qa-label">New Booking</span></a>
+                        <a class="quick-action" href="rentals.html"><span class="qa-icon">🚣</span><span class="qa-label">New Rental</span></a>
+                        <a class="quick-action" href="payments.html"><span class="qa-icon">💳</span><span class="qa-label">Verify Payment</span></a>
+                        <a class="quick-action" href="contracts.html"><span class="qa-icon">📄</span><span class="qa-label">Contracts</span></a>
+                        <a class="quick-action" href="trainers.html"><span class="qa-icon">🏋️</span><span class="qa-label">Add Trainer</span></a>
+                        <a class="quick-action" href="surfboards.html"><span class="qa-icon">🏊</span><span class="qa-label">Add Board</span></a>
+                        <a class="quick-action" href="beaches.html"><span class="qa-icon">🗺️</span><span class="qa-label">Beach Map</span></a>
+                        <a class="quick-action" href="users.html"><span class="qa-icon">👤</span><span class="qa-label">Manage Users</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-grid">
+                <!-- Recent Bookings -->
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Recent Bookings</span>
+                            <a href="bookings.html" class="btn btn-ghost btn-sm">View All →</a>
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead><tr><th>ID</th><th>Player</th><th>Beach</th><th>Date</th><th>Status</th></tr></thead>
+                                <tbody id="recentBookings"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Activity Feed -->
+                    <div class="card" style="margin-top:20px;">
+                        <div class="card-header"><span class="card-title">Activity Feed</span></div>
+                        <div class="card-body" id="activityFeed"></div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                    <!-- Pending Approvals -->
+                    <div class="card" style="margin-bottom:20px;">
+                        <div class="card-header">
+                            <span class="card-title">⚠️ Pending Approvals</span>
+                            <span class="badge badge-pending" id="pendingCount"></span>
+                        </div>
+                        <div class="card-body" id="pendingApprovals"></div>
+                    </div>
+
+                    <!-- Board Status -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Surfboard Status</span></div>
+                        <div class="card-body" id="boardStatus"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('curDate').textContent = new Date().toLocaleDateString('en-LK',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+        // Stats
+        const stats = [
+            { icon:'👤', label:'Total Users',   value: DB.users.length,    color:'teal' },
+            { icon:'🏋️', label:'Trainers',      value: DB.trainers.length, color:'cyan' },
+            { icon:'🏊', label:'Surfboards',    value: DB.surfboards.length, color:'amber' },
+            { icon:'📅', label:'Bookings',      value: DB.bookings.length, color:'emerald' },
+            { icon:'💳', label:'Pending Pay.',  value: DB.payments.filter(p=>p.status==='pending').length, color:'coral' },
+        ];
+
+        document.getElementById('statsRow').innerHTML = stats.map(s=>`
+    <div class="stat-card">
+      <div class="stat-icon ${s.color}">${s.icon}</div>
+      <div class="stat-info">
+        <div class="stat-value">${s.value}</div>
+        <div class="stat-label">${s.label}</div>
+      </div>
+    </div>`).join('');
+
+        // Recent bookings
+        document.getElementById('recentBookings').innerHTML = DB.bookings.slice(0,4).map(b=>`
+    <tr>
+      <td class="text-mono text-xs text-teal">${b.id}</td>
+      <td>${b.playerName}</td>
+      <td class="text-sm text-muted">${b.beach.split(' ')[0]}</td>
+      <td class="text-sm">${fmtDate(b.date)}</td>
+      <td>${statusBadge(b.status)}</td>
+    </tr>`).join('');
+
+        // Activity feed
+        const activities = [
+            {dot:'green', text:'Booking BK-001 approved by Admin', time:'2h ago'},
+            {dot:'amber', text:'Payment PAY-006 awaiting verification', time:'4h ago'},
+            {dot:'blue',  text:'Contract CON-001 generated for Amara', time:'5h ago'},
+            {dot:'red',   text:'Booking BK-004 rejected – payment invalid', time:'1d ago'},
+            {dot:'green', text:'Surfboard "Surf Shark" returned in excellent condition', time:'1d ago'},
+        ];
+        document.getElementById('activityFeed').innerHTML = activities.map(a=>`
+    <div class="activity-item">
+      <div class="activity-dot ${a.dot}"></div>
+      <div style="flex:1"><div class="text-sm">${a.text}</div><div class="text-xs text-muted text-mono" style="margin-top:3px">${a.time}</div></div>
+    </div>`).join('');
+
+        // Pending approvals
+        const pending = DB.payments.filter(p=>p.status==='pending');
+        document.getElementById('pendingCount').textContent = pending.length;
+        document.getElementById('pendingApprovals').innerHTML = pending.map(p=>`
+    <div class="pending-item">
+      <div>
+        <div class="text-sm font-bold">${p.id}</div>
+        <div class="text-xs text-muted">${p.relatedId} · ${fmtCurrency(p.amount)}</div>
+      </div>
+      <div class="action-group">
+        <button class="btn btn-success btn-sm" onclick="showToast('Payment verified!','success')">✓</button>
+        <button class="btn btn-danger btn-sm"  onclick="showToast('Payment rejected','error')">✕</button>
+      </div>
+    </div>`).join('');
+
+        // Board status
+        const bCounts = {};
+        DB.surfboards.forEach(b=>{ bCounts[b.status]=(bCounts[b.status]||0)+1; });
+        const bColors = { available:'var(--emerald)', rented:'var(--wave-cyan)', maintenance:'var(--amber)' };
+        document.getElementById('boardStatus').innerHTML = Object.entries(bCounts).map(([s,c])=>`
+    <div class="flex items-center gap-3" style="margin-bottom:12px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:${bColors[s]||'#aaa'};flex-shrink:0"></div>
+      <span class="text-sm" style="flex:1;text-transform:capitalize">${s}</span>
+      <span class="text-mono text-sm text-white">${c}</span>
+    </div>`).join('');
+    });
+</script>
+</body>
+</html>

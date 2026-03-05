@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Bookings</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left"><h1>Bookings</h1><div class="breadcrumb">Operations / Bookings</div></div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal('addBookingModal')">+ New Booking</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">📅</div><div class="stat-info"><div class="stat-value" id="bkTotal">0</div><div class="stat-label">Total</div></div></div>
+                <div class="stat-card"><div class="stat-icon amber">⏳</div><div class="stat-info"><div class="stat-value" id="bkPending">0</div><div class="stat-label">Pending</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">✅</div><div class="stat-info"><div class="stat-value" id="bkApproved">0</div><div class="stat-label">Approved</div></div></div>
+                <div class="stat-card"><div class="stat-icon cyan">🏄</div><div class="stat-info"><div class="stat-value" id="bkCompleted">0</div><div class="stat-label">Completed</div></div></div>
+                <div class="stat-card"><div class="stat-icon coral">❌</div><div class="stat-info"><div class="stat-value" id="bkRejected">0</div><div class="stat-label">Rejected</div></div></div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="search-wrap" style="flex:1">
+                    <span class="search-icon">🔍</span>
+                    <input class="form-control" id="searchInput" type="text" placeholder="Search bookings…" oninput="renderBookings()"/>
+                </div>
+                <select class="form-control" id="statusFilter" onchange="renderBookings()">
+                    <option value="">All Status</option>
+                    <option>pending</option><option>approved</option><option>completed</option><option>rejected</option>
+                </select>
+                <select class="form-control" id="beachFilter" onchange="renderBookings()">
+                    <option value="">All Beaches</option>
+                    <option>Hikkaduwa Beach</option><option>Arugam Bay</option><option>Weligama Beach</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>ID</th><th>Player</th><th>Trainer</th><th>Beach</th>
+                            <th>Date / Time</th><th>Players</th><th>Amount</th><th>Status</th><th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="bookingsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Booking Modal -->
+<div class="modal-overlay" id="addBookingModal">
+    <div class="modal" style="max-width:640px">
+        <div class="modal-header"><span class="modal-title">New Training Booking</span><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Player</label>
+                    <select class="form-control" id="bkPlayer">
+                        <option value="">Select player…</option>
+                        <option value="4">Amara Wijes.</option><option value="5">Dilshan Raj</option><option value="6">Priya Fern.</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Number of Players</label>
+                    <input class="form-control" type="number" id="bkPlayerCount" min="1" max="10" value="1" oninput="syncCounts()"/>
+                    <div class="form-hint">⚠️ Trainer & Surfboard count must equal player count</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Trainer</label>
+                    <select class="form-control" id="bkTrainer">
+                        <option value="">Select trainer…</option>
+                        <option value="1">Kasun Perera</option><option value="2">Nimal Silva</option>
+                        <option value="3">Ruwan Mendis</option><option value="4">Tharushi Dias</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Trainer Quantity</label>
+                    <input class="form-control" type="number" id="bkTrainerCount" value="1" readonly style="opacity:.6"/>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Surfboard</label>
+                    <select class="form-control" id="bkBoard">
+                        <option value="">Select board…</option>
+                        <option value="1">Wave Rider Pro</option><option value="3">Surf Shark</option>
+                        <option value="5">Foam Rider</option><option value="6">Mini Malibu</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Surfboard Quantity</label>
+                    <input class="form-control" type="number" id="bkBoardCount" value="1" readonly style="opacity:.6"/>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Date</label><input class="form-control" type="date" id="bkDate"/></div>
+                <div class="form-group"><label class="form-label">Time</label><input class="form-control" type="time" id="bkTime" value="08:00"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Beach Location</label>
+                <select class="form-control" id="bkBeach">
+                    <option>Hikkaduwa Beach</option><option>Arugam Bay</option><option>Weligama Beach</option><option>Midigama</option>
+                </select>
+            </div>
+            <div class="divider"></div>
+            <p class="text-sm text-muted" style="margin-bottom:12px">📋 Advance payment slip is mandatory to complete booking.</p>
+            <div class="upload-zone">
+                <input type="file" accept="image/*,.pdf"/>
+                <div class="upload-icon">📎</div>
+                <div class="upload-text">Drag & drop or <strong>click to upload</strong> payment slip<br/><span style="font-size:11px">JPG, PNG or PDF</span></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addBookingModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitBooking()">Submit Booking</button>
+        </div>
+    </div>
+</div>
+
+<!-- View Booking Modal -->
+<div class="modal-overlay" id="viewBookingModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Booking Details</span><button class="modal-close">✕</button></div>
+        <div class="modal-body" id="viewBookingBody"></div>
+        <div class="modal-footer" id="viewBookingActions"></div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let bookings = [...DB.bookings];
+
+    function syncCounts() {
+        const n = document.getElementById('bkPlayerCount').value;
+        document.getElementById('bkTrainerCount').value = n;
+        document.getElementById('bkBoardCount').value   = n;
+    }
+
+    function renderBookings() {
+        const q  = document.getElementById('searchInput').value.toLowerCase();
+        const st = document.getElementById('statusFilter').value;
+        const bch= document.getElementById('beachFilter').value;
+
+        const filtered = bookings.filter(b =>
+            (b.id.toLowerCase().includes(q) || b.playerName.toLowerCase().includes(q) || b.trainerName.toLowerCase().includes(q)) &&
+            (!st  || b.status===st) && (!bch || b.beach===bch)
+        );
+
+        document.getElementById('bookingsTable').innerHTML = filtered.length ? filtered.map(b=>`
+    <tr>
+      <td class="text-mono text-xs text-teal">${b.id}</td>
+      <td><div class="flex items-center gap-2">
+        <div class="avatar avatar-teal" style="width:30px;height:30px;font-size:11px">${initials(b.playerName)}</div>
+        ${b.playerName}
+      </div></td>
+      <td class="text-sm">${b.trainerName}</td>
+      <td class="text-sm text-muted">${b.beach}</td>
+      <td><div class="text-sm">${fmtDate(b.date)}</div><div class="text-xs text-muted text-mono">${b.time}</div></td>
+      <td class="text-mono text-center">${b.players}</td>
+      <td class="text-teal font-bold text-sm">${fmtCurrency(b.amount)}</td>
+      <td>${statusBadge(b.status)}</td>
+      <td><div class="action-group">
+        <button class="btn btn-ghost btn-sm btn-icon" title="View" onclick="viewBooking('${b.id}')">👁️</button>
+        ${b.status==='pending' ? `
+          <button class="btn btn-success btn-sm" onclick="changeStatus('${b.id}','approved')">✓ Approve</button>
+          <button class="btn btn-danger btn-sm"  onclick="changeStatus('${b.id}','rejected')">✕ Reject</button>
+        ` : ''}
+        ${b.status==='approved' ? `<button class="btn btn-outline btn-sm" onclick="changeStatus('${b.id}','completed')">Mark Done</button>` : ''}
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📅</div><h3>No bookings found</h3></div></td></tr>`;
+
+        document.getElementById('bkTotal').textContent    = bookings.length;
+        document.getElementById('bkPending').textContent  = bookings.filter(b=>b.status==='pending').length;
+        document.getElementById('bkApproved').textContent = bookings.filter(b=>b.status==='approved').length;
+        document.getElementById('bkCompleted').textContent= bookings.filter(b=>b.status==='completed').length;
+        document.getElementById('bkRejected').textContent = bookings.filter(b=>b.status==='rejected').length;
+    }
+
+    function viewBooking(id) {
+        const b = bookings.find(x=>x.id===id);
+        document.getElementById('viewBookingBody').innerHTML = `
+    <div style="display:grid;gap:12px">
+      ${row('Booking ID', `<span class="text-mono text-teal">${b.id}</span>`)}
+      ${row('Player', b.playerName)} ${row('Trainer', b.trainerName)}
+      ${row('Surfboard ID', `#${b.surfboardId}`)} ${row('Players', b.players)}
+      ${row('Beach', b.beach)} ${row('Date', fmtDate(b.date))} ${row('Time', b.time)}
+      ${row('Amount', fmtCurrency(b.amount))} ${row('Status', statusBadge(b.status))}
+      ${row('Payment', `<span class="text-mono text-xs">${b.paymentId}</span>`)}
+    </div>`;
+        document.getElementById('viewBookingActions').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('viewBookingModal')">Close</button>
+    ${b.status==='approved' ? `<button class="btn btn-primary" onclick="window.location.href='contracts.html'">📄 View Contract</button>` : ''}`;
+        openModal('viewBookingModal');
+    }
+
+    function row(label, val) {
+        return `<div class="flex items-center gap-3" style="padding:10px 0;border-bottom:1px solid rgba(14,165,160,0.08)">
+    <span class="text-xs text-muted" style="width:110px;flex-shrink:0;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1px">${label}</span>
+    <span class="text-sm">${val}</span>
+  </div>`;
+    }
+
+    function changeStatus(id, status) {
+        const b = bookings.find(x=>x.id===id);
+        b.status = status;
+        const msgs = { approved:'Booking approved!', rejected:'Booking rejected', completed:'Marked as completed' };
+        const types= { approved:'success', rejected:'error', completed:'info' };
+        showToast(msgs[status]||'Status updated', types[status]||'info');
+        renderBookings();
+    }
+
+    function submitBooking() {
+        const player = document.getElementById('bkPlayer').value;
+        const date   = document.getElementById('bkDate').value;
+        if (!player || !date) { showToast('Please fill all required fields','error'); return; }
+        showToast('Booking submitted – awaiting payment verification','success');
+        closeModal('addBookingModal');
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+        document.getElementById('bkDate').min = new Date().toISOString().split('T')[0];
+        renderBookings();
+    });
+</script>
+</body>
+</html>

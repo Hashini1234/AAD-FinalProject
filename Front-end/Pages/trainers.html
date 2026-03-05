@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Trainers</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+    <style>
+        .trainer-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-md);
+            padding:24px; transition:var(--transition); position:relative; overflow:hidden; }
+        .trainer-card::after { content:''; position:absolute; top:0;left:0;right:0; height:3px;
+            background:linear-gradient(90deg,var(--wave-teal),var(--wave-cyan)); transform:scaleX(0);
+            transition:var(--transition); transform-origin:left; }
+        .trainer-card:hover { border-color:rgba(14,165,160,0.4); transform:translateY(-3px); }
+        .trainer-card:hover::after { transform:scaleX(1); }
+        .trainer-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+        .stars { color:var(--amber); font-size:13px; }
+        .trainer-stats { display:flex; gap:16px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+        .trainer-stat { text-align:center; flex:1; }
+        .trainer-stat .ts-val { font-family:var(--font-display); font-size:22px; color:var(--white); }
+        .trainer-stat .ts-lbl { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left"><h1>Trainers</h1><div class="breadcrumb">Management / Trainers</div></div>
+            <div class="header-actions">
+                <div class="tabs" style="margin:0">
+                    <button class="tab-btn active" onclick="switchView('grid',this)">⊞ Grid</button>
+                    <button class="tab-btn"        onclick="switchView('list',this)">☰ List</button>
+                </div>
+                <button class="btn btn-primary" onclick="openModal('addTrainerModal')">+ Add Trainer</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">🏋️</div><div class="stat-info"><div class="stat-value" id="tTotal">0</div><div class="stat-label">Total Trainers</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">✅</div><div class="stat-info"><div class="stat-value" id="tAvail">0</div><div class="stat-label">Available</div></div></div>
+                <div class="stat-card"><div class="stat-icon amber">⏳</div><div class="stat-info"><div class="stat-value" id="tBusy">0</div><div class="stat-label">Busy</div></div></div>
+                <div class="stat-card"><div class="stat-icon cyan">⭐</div><div class="stat-info"><div class="stat-value" id="tAvgRating">0</div><div class="stat-label">Avg Rating</div></div></div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="search-wrap" style="flex:1">
+                    <span class="search-icon">🔍</span>
+                    <input class="form-control" id="searchInput" type="text" placeholder="Search trainers…" oninput="renderTrainers()"/>
+                </div>
+                <select class="form-control" id="statusFilter" onchange="renderTrainers()">
+                    <option value="">All Status</option><option>available</option><option>busy</option>
+                </select>
+            </div>
+
+            <div id="gridView"><div class="trainer-grid" id="trainerGrid"></div></div>
+            <div id="listView" style="display:none">
+                <div class="card"><div class="table-wrap">
+                    <table><thead><tr><th>Trainer</th><th>Specialty</th><th>Experience</th><th>Sessions</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="trainerTable"></tbody></table>
+                </div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addTrainerModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Add New Trainer</span><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Full Name</label><input class="form-control" placeholder="Trainer name"/></div>
+                <div class="form-group"><label class="form-label">Email</label><input class="form-control" type="email" placeholder="trainer@smartsurf.lk"/></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Specialty</label>
+                    <select class="form-control"><option>Beginner Surfing</option><option>Advanced Tricks</option><option>Kids Training</option><option>Competitive Surf</option></select>
+                </div>
+                <div class="form-group"><label class="form-label">Experience (Years)</label><input class="form-control" type="number" min="1" placeholder="e.g. 5"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-control" placeholder="+94 77 …"/></div>
+            <div class="form-group"><label class="form-label">Bio</label><textarea class="form-control" placeholder="Short trainer bio…"></textarea></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addTrainerModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveTrainer()">Add Trainer</button>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let trainers = [...DB.trainers];
+    let currentView = 'grid';
+
+    function switchView(v, btn) {
+        currentView = v;
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('gridView').style.display = v==='grid' ? '' : 'none';
+        document.getElementById('listView').style.display = v==='list' ? '' : 'none';
+        renderTrainers();
+    }
+
+    function renderTrainers() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const st= document.getElementById('statusFilter').value;
+        const filtered = trainers.filter(t =>
+            (t.name.toLowerCase().includes(q) || t.specialty.toLowerCase().includes(q)) &&
+            (!st || t.status===st)
+        );
+
+        const colors = ['teal','coral','amber','emerald','purple'];
+
+        // Grid
+        document.getElementById('trainerGrid').innerHTML = filtered.length ? filtered.map((t,i)=>`
+    <div class="trainer-card">
+      <div class="flex items-center gap-3" style="margin-bottom:12px">
+        <div class="avatar avatar-${colors[i%5]}" style="width:48px;height:48px;font-size:18px">${initials(t.name)}</div>
+        <div>
+          <div class="font-bold text-white">${t.name}</div>
+          <div class="text-xs text-muted">${t.specialty}</div>
+        </div>
+        ${statusBadge(t.status)}
+      </div>
+      <div class="stars">${'★'.repeat(Math.floor(t.rating))}${'☆'.repeat(5-Math.floor(t.rating))}</div>
+      <div class="text-xs text-muted" style="margin-top:2px">${t.rating} / 5.0</div>
+      <div class="trainer-stats">
+        <div class="trainer-stat"><div class="ts-val">${t.experience}</div><div class="ts-lbl">Yrs Exp.</div></div>
+        <div class="trainer-stat"><div class="ts-val">${t.sessions}</div><div class="ts-lbl">Sessions</div></div>
+      </div>
+      <div class="action-group" style="margin-top:14px">
+        <button class="btn btn-outline btn-sm" style="flex:1" onclick="openModal('addTrainerModal')">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteTrainer(${t.id})">🗑️</button>
+      </div>
+    </div>`).join('') : '<div class="empty-state"><div class="empty-icon">🏋️</div><h3>No trainers found</h3></div>';
+
+        // List
+        document.getElementById('trainerTable').innerHTML = filtered.map(t=>`
+    <tr>
+      <td><div class="flex items-center gap-2"><div class="avatar avatar-teal">${initials(t.name)}</div>${t.name}</div></td>
+      <td class="text-sm text-muted">${t.specialty}</td>
+      <td class="text-mono text-sm">${t.experience} yrs</td>
+      <td class="text-mono">${t.sessions}</td>
+      <td><span class="text-amber">★ ${t.rating}</span></td>
+      <td>${statusBadge(t.status)}</td>
+      <td><div class="action-group">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openModal('addTrainerModal')">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteTrainer(${t.id})">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+
+        // Stats
+        document.getElementById('tTotal').textContent  = trainers.length;
+        document.getElementById('tAvail').textContent  = trainers.filter(t=>t.status==='available').length;
+        document.getElementById('tBusy').textContent   = trainers.filter(t=>t.status==='busy').length;
+        const avgRating = (trainers.reduce((a,t)=>a+t.rating,0)/trainers.length).toFixed(1);
+        document.getElementById('tAvgRating').textContent = avgRating;
+    }
+
+    function saveTrainer() { showToast('Trainer added successfully','success'); closeModal('addTrainerModal'); }
+    function deleteTrainer(id) {
+        confirmDelete('Remove this trainer?', ()=>{ trainers=trainers.filter(t=>t.id!==id); showToast('Trainer removed','error'); renderTrainers(); });
+    }
+
+    document.addEventListener('DOMContentLoaded', renderTrainers);
+</script>
+</body>
+</html>

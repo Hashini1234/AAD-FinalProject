@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Login</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+    <style>
+        .wave-rings {
+            position: fixed; top: -200px; left: -200px;
+            width: 700px; height: 700px;
+            border-radius: 50%;
+            border: 1px solid rgba(14,165,160,0.08);
+            animation: ringPulse 6s ease-in-out infinite;
+        }
+        .wave-rings:nth-child(2){ top: auto; bottom: -250px; left: auto; right: -200px; width: 800px; height: 800px; animation-delay: 3s; }
+        @keyframes ringPulse { 0%,100%{ transform:scale(1); opacity:0.5; } 50%{ transform:scale(1.05); opacity:1; } }
+        .auth-card { animation: fadeUp 0.5s ease both; }
+        @keyframes fadeUp { from{ opacity:0; transform:translateY(30px); } to{ opacity:1; transform:translateY(0); } }
+        .role-tabs { display:flex; gap:6px; margin-bottom:24px; }
+        .role-tab  { flex:1; padding:9px; text-align:center; border:1px solid var(--border); border-radius:var(--radius-sm);
+            cursor:pointer; font-size:13px; font-weight:600; color:var(--text-muted); transition:var(--transition); background:none; }
+        .role-tab.active{ border-color:var(--wave-teal); color:var(--wave-cyan); background:rgba(14,165,160,0.12); }
+        .divider-or { text-align:center; position:relative; color:var(--text-muted); font-size:12px; margin:20px 0; }
+        .divider-or::before,.divider-or::after{ content:''; position:absolute; top:50%; width:40%; height:1px; background:var(--border); }
+        .divider-or::before{ left:0; } .divider-or::after{ right:0; }
+    </style>
+</head>
+<body>
+<div class="wave-rings"></div>
+<div class="wave-rings"></div>
+
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <span class="logo-wave">🏄</span>
+            <span class="logo-mark">SMART SURF</span>
+            <p style="font-size:12px;letter-spacing:2px;color:var(--text-muted);margin-top:4px;font-family:var(--font-mono)">MANAGEMENT SYSTEM</p>
+        </div>
+
+        <div class="role-tabs">
+            <button class="role-tab active" data-role="ADMIN"   onclick="setRole(this,'ADMIN')">Admin</button>
+            <button class="role-tab"        data-role="TRAINER" onclick="setRole(this,'TRAINER')">Trainer</button>
+            <button class="role-tab"        data-role="PLAYER"  onclick="setRole(this,'PLAYER')">Player</button>
+        </div>
+
+        <div id="loginPanel">
+            <h2 class="auth-title">Welcome Back 👋</h2>
+            <p class="auth-sub">Sign in to your <span id="roleLabel" class="text-teal">Admin</span> account</p>
+
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input class="form-control" type="email" id="emailInput" placeholder="you@smartsurf.lk" value="admin@smartsurf.lk"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input class="form-control" type="password" id="passInput" placeholder="••••••••" value="••••••••"/>
+            </div>
+
+            <div class="flex items-center gap-2" style="margin-bottom:20px;justify-content:space-between;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);cursor:pointer;">
+                    <input type="checkbox" checked style="accent-color:var(--wave-teal)"/> Remember me
+                </label>
+                <a href="#" style="font-size:13px;color:var(--wave-cyan);text-decoration:none;">Forgot password?</a>
+            </div>
+
+            <button class="btn btn-primary w-full btn-lg" onclick="doLogin()">
+                🔐 Sign In
+            </button>
+        </div>
+
+        <div class="divider-or">or</div>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="register.html">Register as Player</a>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let selectedRole = 'ADMIN';
+
+    function setRole(el, role) {
+        document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        selectedRole = role;
+        document.getElementById('roleLabel').textContent = role.charAt(0) + role.slice(1).toLowerCase();
+        const presets = { ADMIN:'admin@smartsurf.lk', TRAINER:'kasun@smartsurf.lk', PLAYER:'amara@gmail.com' };
+        document.getElementById('emailInput').value = presets[role] || '';
+    }
+
+    function doLogin() {
+        const email = document.getElementById('emailInput').value;
+        if (!email) { showToast('Please enter your email', 'error'); return; }
+        showToast('Authenticating with JWT…', 'info');
+        setTimeout(() => {
+            showToast('Login successful! Redirecting…', 'success');
+            setTimeout(() => window.location.href = 'dashboard.html', 800);
+        }, 900);
+    }
+</script>
+</body>
+</html>

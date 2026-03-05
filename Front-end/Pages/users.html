@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Users</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <h1>Users</h1>
+                <div class="breadcrumb">Management / Users</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal('addUserModal')">+ Add User</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">👤</div><div class="stat-info"><div class="stat-value" id="totalUsers">0</div><div class="stat-label">Total Users</div></div></div>
+                <div class="stat-card"><div class="stat-icon coral">🛡️</div><div class="stat-info"><div class="stat-value" id="totalAdmins">0</div><div class="stat-label">Admins</div></div></div>
+                <div class="stat-card"><div class="stat-icon cyan">🏋️</div><div class="stat-info"><div class="stat-value" id="totalTrainers">0</div><div class="stat-label">Trainers</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">🏄</div><div class="stat-info"><div class="stat-value" id="totalPlayers">0</div><div class="stat-label">Players</div></div></div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="search-wrap" style="flex:1">
+                    <span class="search-icon">🔍</span>
+                    <input class="form-control" id="searchInput" type="text" placeholder="Search users…" oninput="renderUsers()"/>
+                </div>
+                <select class="form-control" id="roleFilter" onchange="renderUsers()">
+                    <option value="">All Roles</option>
+                    <option>ADMIN</option><option>TRAINER</option><option>PLAYER</option>
+                </select>
+                <select class="form-control" id="statusFilter" onchange="renderUsers()">
+                    <option value="">All Status</option>
+                    <option>active</option><option>inactive</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Phone</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="addUserModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">Add New User</span>
+            <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Full Name</label><input class="form-control" placeholder="e.g. Kasun Perera"/></div>
+                <div class="form-group"><label class="form-label">Email</label><input class="form-control" type="email" placeholder="user@smartsurf.lk"/></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Phone</label><input class="form-control" placeholder="+94 77 …"/></div>
+                <div class="form-group"><label class="form-label">Role</label>
+                    <select class="form-control"><option>PLAYER</option><option>TRAINER</option><option>ADMIN</option></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Password</label><input class="form-control" type="password" placeholder="••••••••"/></div>
+                <div class="form-group"><label class="form-label">Confirm Password</label><input class="form-control" type="password" placeholder="••••••••"/></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addUserModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="addUser()">Create User</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editUserModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">Edit User</span>
+            <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body" id="editUserBody"></div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('editUserModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveUser()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let users = [...DB.users];
+
+    function renderUsers() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        const role = document.getElementById('roleFilter').value;
+        const status = document.getElementById('statusFilter').value;
+
+        const filtered = users.filter(u =>
+            (u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)) &&
+            (!role   || u.role === role) &&
+            (!status || u.status === status)
+        );
+
+        const roleClass = { ADMIN:'badge-admin', TRAINER:'badge-trainer', PLAYER:'badge-player' };
+        const colors = ['teal','coral','amber','emerald','purple'];
+
+        document.getElementById('usersTableBody').innerHTML = filtered.length ? filtered.map((u,i)=>`
+    <tr>
+      <td>
+        <div class="flex items-center gap-2">
+          <div class="avatar avatar-${colors[i%5]}">${initials(u.name)}</div>
+          <span class="font-bold">${u.name}</span>
+        </div>
+      </td>
+      <td class="text-muted text-sm">${u.email}</td>
+      <td><span class="badge ${roleClass[u.role]}">${u.role}</span></td>
+      <td class="text-sm text-mono">${u.phone}</td>
+      <td>${statusBadge(u.status)}</td>
+      <td class="text-sm text-muted">${fmtDate(u.created)}</td>
+      <td>
+        <div class="action-group">
+          <button class="btn btn-ghost btn-sm btn-icon" title="Edit" onclick="editUser(${u.id})">✏️</button>
+          <button class="btn btn-${u.status==='active'?'danger':'success'} btn-sm" onclick="toggleStatus(${u.id})">
+            ${u.status==='active'?'Deactivate':'Activate'}
+          </button>
+          <button class="btn btn-danger btn-sm btn-icon" title="Delete" onclick="deleteUser(${u.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👤</div><h3>No users found</h3></div></td></tr>`;
+
+        document.getElementById('totalUsers').textContent   = users.length;
+        document.getElementById('totalAdmins').textContent  = users.filter(u=>u.role==='ADMIN').length;
+        document.getElementById('totalTrainers').textContent= users.filter(u=>u.role==='TRAINER').length;
+        document.getElementById('totalPlayers').textContent = users.filter(u=>u.role==='PLAYER').length;
+    }
+
+    function addUser() {
+        showToast('User created successfully', 'success');
+        closeModal('addUserModal');
+    }
+
+    function editUser(id) {
+        const u = users.find(x=>x.id===id);
+        document.getElementById('editUserBody').innerHTML = `
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name</label><input class="form-control" value="${u.name}" id="eName"/></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-control" value="${u.email}" id="eEmail"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-control" value="${u.phone}" id="ePhone"/></div>
+      <div class="form-group"><label class="form-label">Role</label>
+        <select class="form-control" id="eRole">
+          <option ${u.role==='ADMIN'?'selected':''}>ADMIN</option>
+          <option ${u.role==='TRAINER'?'selected':''}>TRAINER</option>
+          <option ${u.role==='PLAYER'?'selected':''}>PLAYER</option>
+        </select>
+      </div>
+    </div>`;
+        document.getElementById('editUserModal').dataset.uid = id;
+        openModal('editUserModal');
+    }
+
+    function saveUser() {
+        showToast('User updated successfully', 'success');
+        closeModal('editUserModal');
+    }
+
+    function toggleStatus(id) {
+        const u = users.find(x=>x.id===id);
+        u.status = u.status==='active' ? 'inactive' : 'active';
+        showToast(`User ${u.status === 'active' ? 'activated' : 'deactivated'}`, u.status==='active'?'success':'info');
+        renderUsers();
+    }
+
+    function deleteUser(id) {
+        confirmDelete('Delete this user permanently?', () => {
+            users = users.filter(u=>u.id!==id);
+            showToast('User deleted', 'error');
+            renderUsers();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', renderUsers);
+</script>
+</body>
+</html>

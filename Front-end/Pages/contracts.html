@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Contracts</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left"><h1>Contracts</h1><div class="breadcrumb">Records / Contracts</div></div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal('genContractModal')">+ Generate Contract</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">📄</div><div class="stat-info"><div class="stat-value" id="cnTotal">0</div><div class="stat-label">Total</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">✅</div><div class="stat-info"><div class="stat-value" id="cnActive">0</div><div class="stat-label">Active</div></div></div>
+                <div class="stat-card"><div class="stat-icon cyan">🏁</div><div class="stat-info"><div class="stat-value" id="cnCompleted">0</div><div class="stat-label">Completed</div></div></div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="search-wrap" style="flex:1">
+                    <span class="search-icon">🔍</span>
+                    <input class="form-control" type="text" id="searchInput" placeholder="Search contracts…" oninput="renderContracts()"/>
+                </div>
+                <select class="form-control" id="statusFilter" onchange="renderContracts()">
+                    <option value="">All Status</option><option>active</option><option>completed</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Contract ID</th><th>Player</th><th>Booking</th><th>Trainer</th><th>Beach</th><th>Session Date</th><th>Generated</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="contractsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal-overlay" id="genContractModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Generate Contract</span><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label class="form-label">Select Approved Booking</label>
+                <select class="form-control" id="cnBooking" onchange="fillContractForm()">
+                    <option value="">Choose booking…</option>
+                    <option value="BK-001">BK-001 – Amara Wijes. / Hikkaduwa Beach</option>
+                </select>
+            </div>
+            <div id="cnFields" style="display:none">
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Player Name</label><input class="form-control" id="cnPlayer" readonly/></div>
+                    <div class="form-group"><label class="form-label">Trainer</label><input class="form-control" id="cnTrainer" readonly/></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Beach</label><input class="form-control" id="cnBeach" readonly/></div>
+                    <div class="form-group"><label class="form-label">Session Date</label><input class="form-control" id="cnDate" readonly/></div>
+                </div>
+                <div class="form-group"><label class="form-label">Surfboard</label><input class="form-control" id="cnBoard" readonly/></div>
+                <div class="form-group"><label class="form-label">Number of Players</label><input class="form-control" id="cnPlayers" readonly/></div>
+                <div class="card" style="padding:16px;background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.3);margin-top:12px">
+                    <p class="text-sm"><strong class="text-amber">⚠️ Liability Notice:</strong> <span class="text-muted">Contract will include standard liability disclaimer, safety agreement, and equipment responsibility clause.</span></p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('genContractModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="generateContract()">📄 Generate PDF Contract</button>
+        </div>
+    </div>
+</div>
+
+<!-- View Contract Modal -->
+<div class="modal-overlay" id="viewContractModal">
+    <div class="modal" style="max-width:680px">
+        <div class="modal-header">
+            <span class="modal-title">Contract Preview</span>
+            <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-body" id="contractPreviewBody"></div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('viewContractModal')">Close</button>
+            <button class="btn btn-primary" onclick="showToast('Contract downloaded as PDF','success')">⬇️ Download PDF</button>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let contracts = [...DB.contracts];
+
+    function fillContractForm() {
+        const val = document.getElementById('cnBooking').value;
+        const fields = document.getElementById('cnFields');
+        if (val === 'BK-001') {
+            const b = DB.bookings.find(x=>x.id==='BK-001');
+            document.getElementById('cnPlayer').value  = b.playerName;
+            document.getElementById('cnTrainer').value = b.trainerName;
+            document.getElementById('cnBeach').value   = b.beach;
+            document.getElementById('cnDate').value    = b.date;
+            document.getElementById('cnBoard').value   = 'Wave Rider Pro';
+            document.getElementById('cnPlayers').value = b.players;
+            fields.style.display = '';
+        } else {
+            fields.style.display = 'none';
+        }
+    }
+
+    function generateContract() {
+        const bkId = document.getElementById('cnBooking').value;
+        if (!bkId) { showToast('Please select a booking','error'); return; }
+        const newCon = {
+            id: 'CON-00'+(contracts.length+1),
+            bookingId: bkId,
+            playerId: 4,
+            playerName: document.getElementById('cnPlayer').value,
+            trainerName: document.getElementById('cnTrainer').value,
+            beach: document.getElementById('cnBeach').value,
+            date:  document.getElementById('cnDate').value,
+            generated: new Date().toISOString().split('T')[0],
+            status: 'active'
+        };
+        contracts.push(newCon);
+        showToast('Contract generated and ready to download!','success');
+        closeModal('genContractModal');
+        renderContracts();
+    }
+
+    function renderContracts() {
+        const q  = document.getElementById('searchInput').value.toLowerCase();
+        const st = document.getElementById('statusFilter').value;
+
+        const filtered = contracts.filter(c =>
+            (c.id.toLowerCase().includes(q) || c.playerName.toLowerCase().includes(q) || c.bookingId.toLowerCase().includes(q)) &&
+            (!st || c.status===st)
+        );
+
+        document.getElementById('contractsTable').innerHTML = filtered.length ? filtered.map(c=>`
+    <tr>
+      <td class="text-mono text-xs text-teal">${c.id}</td>
+      <td><div class="flex items-center gap-2">
+        <div class="avatar avatar-emerald" style="width:30px;height:30px;font-size:11px">${initials(c.playerName)}</div>
+        ${c.playerName}
+      </div></td>
+      <td class="text-mono text-xs">${c.bookingId}</td>
+      <td class="text-sm text-muted">${c.trainerName}</td>
+      <td class="text-sm">${c.beach}</td>
+      <td class="text-sm">${fmtDate(c.date)}</td>
+      <td class="text-sm text-muted">${fmtDate(c.generated)}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td><div class="action-group">
+        <button class="btn btn-outline btn-sm" onclick="previewContract('${c.id}')">👁️ Preview</button>
+        <button class="btn btn-primary btn-sm" onclick="showToast('Contract downloaded','success')">⬇️ PDF</button>
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📄</div><h3>No contracts found</h3></div></td></tr>`;
+
+        document.getElementById('cnTotal').textContent    = contracts.length;
+        document.getElementById('cnActive').textContent   = contracts.filter(c=>c.status==='active').length;
+        document.getElementById('cnCompleted').textContent= contracts.filter(c=>c.status==='completed').length;
+    }
+
+    function previewContract(id) {
+        const c = contracts.find(x=>x.id===id);
+        document.getElementById('contractPreviewBody').innerHTML = generateContractHTML({
+            contractId:  c.id,
+            date:        c.generated,
+            playerName:  c.playerName,
+            phone:       '+94 71 300 0004',
+            beach:       c.beach,
+            sessionDate: c.date,
+            trainerName: c.trainerName,
+            surfboard:   'Wave Rider Pro',
+            players:     2
+        });
+        openModal('viewContractModal');
+    }
+
+    document.addEventListener('DOMContentLoaded', renderContracts);
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Surfboards</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+    <style>
+        .board-card { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-md);
+            overflow:hidden; transition:var(--transition); }
+        .board-card:hover { border-color:rgba(14,165,160,0.5); transform:translateY(-3px); box-shadow:var(--shadow-card); }
+        .board-banner { height:90px; display:flex; align-items:center; justify-content:center; font-size:52px;
+            background:linear-gradient(135deg,rgba(14,165,160,0.12),rgba(10,22,40,0.8)); }
+        .board-body { padding:16px; }
+        .board-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; }
+        .board-meta { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0; }
+        .meta-chip { font-size:11px; padding:3px 9px; border-radius:20px; background:rgba(255,255,255,0.06);
+            color:var(--text-muted); border:1px solid rgba(255,255,255,0.1); font-family:var(--font-mono); }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left"><h1>Surfboards</h1><div class="breadcrumb">Management / Surfboards</div></div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal('addBoardModal')">+ Add Surfboard</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">🏊</div><div class="stat-info"><div class="stat-value" id="bTotal">0</div><div class="stat-label">Total Boards</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">✅</div><div class="stat-info"><div class="stat-value" id="bAvail">0</div><div class="stat-label">Available</div></div></div>
+                <div class="stat-card"><div class="stat-icon cyan">🚣</div><div class="stat-info"><div class="stat-value" id="bRented">0</div><div class="stat-label">Rented</div></div></div>
+                <div class="stat-card"><div class="stat-icon amber">🔧</div><div class="stat-info"><div class="stat-value" id="bMaint">0</div><div class="stat-label">Maintenance</div></div></div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="search-wrap" style="flex:1">
+                    <span class="search-icon">🔍</span>
+                    <input class="form-control" id="searchInput" type="text" placeholder="Search boards…" oninput="renderBoards()"/>
+                </div>
+                <select class="form-control" id="typeFilter" onchange="renderBoards()">
+                    <option value="">All Types</option>
+                    <option>Shortboard</option><option>Longboard</option><option>Fish</option>
+                    <option>Gun</option><option>Foamboard</option><option>Funboard</option>
+                </select>
+                <select class="form-control" id="statusFilter" onchange="renderBoards()">
+                    <option value="">All Status</option>
+                    <option>available</option><option>rented</option><option>maintenance</option>
+                </select>
+            </div>
+
+            <div class="board-grid" id="boardGrid"></div>
+
+            <!-- List view toggle -->
+            <div class="section-header" style="margin-top:28px">
+                <span class="section-title">Board <span>Inventory</span> List</span>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Name</th><th>Type</th><th>Brand</th><th>Length</th><th>Condition</th><th>Daily Price</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="boardTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div class="modal-overlay" id="addBoardModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Add New Surfboard</span><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Board Name</label><input class="form-control" placeholder="e.g. Wave Rider Pro"/></div>
+                <div class="form-group"><label class="form-label">Brand</label><input class="form-control" placeholder="e.g. Firewire"/></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Type</label>
+                    <select class="form-control"><option>Shortboard</option><option>Longboard</option><option>Fish</option><option>Gun</option><option>Foamboard</option><option>Funboard</option></select>
+                </div>
+                <div class="form-group"><label class="form-label">Length</label><input class="form-control" placeholder="e.g. 6'2&quot;"/></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Condition</label>
+                    <select class="form-control"><option>excellent</option><option>good</option><option>fair</option></select>
+                </div>
+                <div class="form-group"><label class="form-label">Daily Price (LKR)</label><input class="form-control" type="number" placeholder="e.g. 1500"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Notes</label><textarea class="form-control" placeholder="Any additional notes…"></textarea></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addBoardModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveBoard()">Add Board</button>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let boards = [...DB.surfboards];
+    const boardEmojis = { Shortboard:'🏄', Longboard:'🌊', Fish:'🐠', Gun:'🎯', Foamboard:'🧽', Funboard:'🎉' };
+
+    function renderBoards() {
+        const q  = document.getElementById('searchInput').value.toLowerCase();
+        const tp = document.getElementById('typeFilter').value;
+        const st = document.getElementById('statusFilter').value;
+
+        const filtered = boards.filter(b =>
+            (b.name.toLowerCase().includes(q) || b.brand.toLowerCase().includes(q) || b.type.toLowerCase().includes(q)) &&
+            (!tp || b.type===tp) && (!st || b.status===st)
+        );
+
+        document.getElementById('boardGrid').innerHTML = filtered.length ? filtered.map(b=>`
+    <div class="board-card">
+      <div class="board-banner">${boardEmojis[b.type]||'🏄'}</div>
+      <div class="board-body">
+        <div class="font-bold text-white" style="font-size:15px">${b.name}</div>
+        <div class="text-xs text-muted">${b.brand}</div>
+        <div class="board-meta">
+          <span class="meta-chip">${b.type}</span>
+          <span class="meta-chip">${b.length}</span>
+          <span class="meta-chip">${b.condition}</span>
+        </div>
+        <div class="flex items-center gap-2" style="margin-bottom:12px;justify-content:space-between">
+          ${statusBadge(b.status)}
+          <span class="text-teal font-bold text-sm">${fmtCurrency(b.price)}/day</span>
+        </div>
+        <div class="action-group">
+          <button class="btn btn-outline btn-sm" style="flex:1" onclick="openModal('addBoardModal')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteBoard(${b.id})">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('') : '<div class="empty-state"><div class="empty-icon">🏊</div><h3>No boards found</h3></div>';
+
+        document.getElementById('boardTable').innerHTML = filtered.map(b=>`
+    <tr>
+      <td><span class="font-bold">${b.name}</span></td>
+      <td>${boardEmojis[b.type]||''} ${b.type}</td>
+      <td class="text-muted text-sm">${b.brand}</td>
+      <td class="text-mono text-sm">${b.length}</td>
+      <td>${statusBadge(b.condition)}</td>
+      <td class="text-teal font-bold">${fmtCurrency(b.price)}</td>
+      <td>${statusBadge(b.status)}</td>
+      <td><div class="action-group">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openModal('addBoardModal')">✏️</button>
+        <button class="btn btn-${b.status==='available'?'danger':'success'} btn-sm" onclick="toggleBoard(${b.id})">
+          ${b.status==='available'?'Set Maintenance':'Set Available'}
+        </button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteBoard(${b.id})">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+
+        document.getElementById('bTotal').textContent  = boards.length;
+        document.getElementById('bAvail').textContent  = boards.filter(b=>b.status==='available').length;
+        document.getElementById('bRented').textContent = boards.filter(b=>b.status==='rented').length;
+        document.getElementById('bMaint').textContent  = boards.filter(b=>b.status==='maintenance').length;
+    }
+
+    function saveBoard() { showToast('Surfboard added!','success'); closeModal('addBoardModal'); }
+    function toggleBoard(id) {
+        const b = boards.find(x=>x.id===id);
+        b.status = b.status==='available' ? 'maintenance' : 'available';
+        showToast(`Board status updated to ${b.status}`,'info');
+        renderBoards();
+    }
+    function deleteBoard(id) {
+        confirmDelete('Remove this surfboard?',()=>{ boards=boards.filter(b=>b.id!==id); showToast('Board removed','error'); renderBoards(); });
+    }
+
+    document.addEventListener('DOMContentLoaded', renderBoards);
+</script>
+</body>
+</html>

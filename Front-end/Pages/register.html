@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Register</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+    <style>
+        .steps { display:flex; gap:0; margin-bottom:32px; }
+        .step  { flex:1; text-align:center; padding:12px 8px; font-size:12px; color:var(--text-muted);
+            border-bottom:2px solid var(--border); transition:var(--transition); }
+        .step.active   { color:var(--wave-cyan); border-color:var(--wave-teal); }
+        .step.done     { color:var(--emerald);   border-color:var(--emerald); }
+        .step-num { display:inline-flex; width:22px; height:22px; border-radius:50%;
+            background:rgba(255,255,255,0.07); align-items:center; justify-content:center;
+            font-size:11px; margin-right:6px; font-family:var(--font-mono); }
+        .step.active .step-num { background:rgba(14,165,160,0.25); color:var(--wave-cyan); }
+        .step.done   .step-num { background:rgba(16,185,129,0.25); color:var(--emerald); }
+        .panel { display:none; } .panel.active { display:block; }
+        .terms-box { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:var(--radius-sm);
+            padding:14px; max-height:160px; overflow-y:auto; font-size:12px; color:var(--text-muted); line-height:1.8; }
+    </style>
+</head>
+<body>
+<div class="auth-page" style="align-items:flex-start; padding-top:40px">
+    <div class="auth-card" style="max-width:520px">
+        <div class="auth-logo">
+            <span class="logo-wave">🏄</span>
+            <span class="logo-mark">SMART SURF</span>
+            <p style="font-size:12px;letter-spacing:2px;color:var(--text-muted);margin-top:4px;font-family:var(--font-mono)">PLAYER REGISTRATION</p>
+        </div>
+
+        <div class="steps" id="steps">
+            <div class="step active"><span class="step-num">1</span>Account</div>
+            <div class="step"><span class="step-num">2</span>Profile</div>
+            <div class="step"><span class="step-num">3</span>Terms</div>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="panel active" id="panel1">
+            <h2 class="auth-title">Create Account</h2>
+            <p class="auth-sub">Start your surf journey with Smart Surf 🌊</p>
+            <div class="form-group"><label class="form-label">Full Name</label><input class="form-control" id="regName" placeholder="e.g. Kasun Perera"/></div>
+            <div class="form-group"><label class="form-label">Email Address</label><input class="form-control" type="email" id="regEmail" placeholder="you@example.com"/></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Password</label><input class="form-control" type="password" id="regPass" placeholder="min. 8 characters"/></div>
+                <div class="form-group"><label class="form-label">Confirm</label><input class="form-control" type="password" placeholder="repeat password"/></div>
+            </div>
+            <button class="btn btn-primary w-full btn-lg" onclick="nextStep(1)">Continue →</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="panel" id="panel2">
+            <h2 class="auth-title">Your Profile</h2>
+            <p class="auth-sub">Help us personalise your experience</p>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Phone</label><input class="form-control" placeholder="+94 77 …"/></div>
+                <div class="form-group"><label class="form-label">Date of Birth</label><input class="form-control" type="date"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Address</label><input class="form-control" placeholder="Your city/area"/></div>
+            <div class="form-group"><label class="form-label">Surf Experience</label>
+                <select class="form-control">
+                    <option>Never tried surfing</option><option>Beginner (1-5 sessions)</option>
+                    <option>Intermediate (6-20 sessions)</option><option>Advanced</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Emergency Contact</label><input class="form-control" placeholder="Name & phone of emergency contact"/></div>
+            <div class="action-group" style="justify-content:space-between;margin-top:8px">
+                <button class="btn btn-ghost" onclick="prevStep(2)">← Back</button>
+                <button class="btn btn-primary btn-lg" onclick="nextStep(2)">Continue →</button>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="panel" id="panel3">
+            <h2 class="auth-title">Terms & Conditions</h2>
+            <p class="auth-sub">Please review and accept before proceeding</p>
+            <div class="terms-box">
+                <p><strong>1. Booking Policy</strong><br>All bookings are subject to admin approval. Advance payment slip upload is mandatory. Payment must be made via bank transfer, cash deposit, or in-person at the Smart Surf centre.</p>
+                <p><strong>2. Liability Waiver</strong><br>Surfing involves inherent risk. Smart Surf and its trainers are not responsible for injuries, losses, or damages during sessions. Participants acknowledge physical fitness requirements.</p>
+                <p><strong>3. Equipment Responsibility</strong><br>Players are responsible for rented surfboards. Any damage due to negligence will be charged. All equipment must be returned in original condition.</p>
+                <p><strong>4. Cancellation Policy</strong><br>Cancellations made 48+ hours prior to session date will receive a full refund. Within 48 hours – no refund is guaranteed.</p>
+                <p><strong>5. Data Privacy</strong><br>Your personal data is secured with BCrypt encryption and JWT authentication. We do not share your data with third parties.</p>
+            </div>
+            <label style="display:flex;align-items:flex-start;gap:10px;margin:16px 0;cursor:pointer;font-size:13px;color:var(--text-muted)">
+                <input type="checkbox" id="agreeCheck" style="accent-color:var(--wave-teal);margin-top:3px"/>
+                I have read and agree to Smart Surf's Terms & Conditions and Liability Waiver
+            </label>
+            <div class="action-group" style="justify-content:space-between">
+                <button class="btn btn-ghost" onclick="prevStep(3)">← Back</button>
+                <button class="btn btn-primary btn-lg" onclick="register()">🏄 Register Now</button>
+            </div>
+        </div>
+
+        <div class="auth-footer">Already have an account? <a href="login.html">Sign in</a></div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let currentStep = 1;
+
+    function nextStep(from) {
+        if (from===1) {
+            const name  = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const pass  = document.getElementById('regPass').value;
+            if (!name||!email||!pass) { showToast('Please fill all fields','error'); return; }
+            if (pass.length < 8) { showToast('Password must be at least 8 characters','error'); return; }
+        }
+        goToStep(from+1);
+    }
+
+    function prevStep(from) { goToStep(from-1); }
+
+    function goToStep(n) {
+        document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===n-1));
+        document.querySelectorAll('.step').forEach((s,i) => {
+            s.classList.remove('active','done');
+            if (i===n-1) s.classList.add('active');
+            if (i<n-1)   s.classList.add('done');
+        });
+        currentStep = n;
+    }
+
+    function register() {
+        if (!document.getElementById('agreeCheck').checked) { showToast('Please accept the terms to continue','error'); return; }
+        showToast('Creating your account with JWT…','info');
+        setTimeout(()=>{
+            showToast('Account created! Redirecting to login…','success');
+            setTimeout(()=>window.location.href='login.html', 1000);
+        }, 1000);
+    }
+</script>
+</body>
+</html>

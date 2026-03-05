@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Payments</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+    <style>
+        .slip-preview { width:80px; height:60px; border-radius:6px; background:rgba(14,165,160,0.12);
+            border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+            font-size:24px; cursor:pointer; transition:var(--transition); }
+        .slip-preview:hover { background:rgba(14,165,160,0.25); }
+        .flow-steps { display:flex; align-items:center; gap:0; margin-bottom:28px; }
+        .flow-step { flex:1; text-align:center; padding:14px; background:rgba(255,255,255,0.03);
+            border:1px solid var(--border); font-size:12px; color:var(--text-muted); position:relative; }
+        .flow-step.done { background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.3); color:var(--emerald); }
+        .flow-step .fs-icon { font-size:20px; display:block; margin-bottom:4px; }
+        .flow-step:not(:last-child)::after { content:'→'; position:absolute; right:-10px; top:50%;
+            transform:translateY(-50%); z-index:1; color:var(--text-muted); }
+        .flow-step:first-child { border-radius:var(--radius-sm) 0 0 var(--radius-sm); }
+        .flow-step:last-child  { border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left"><h1>Payments</h1><div class="breadcrumb">Operations / Manual Payment Verification</div></div>
+        </header>
+
+        <div class="page-body">
+            <!-- Flow -->
+            <div class="flow-steps">
+                <div class="flow-step done"><span class="fs-icon">💸</span>Player Pays</div>
+                <div class="flow-step done"><span class="fs-icon">📎</span>Slip Uploaded</div>
+                <div class="flow-step done"><span class="fs-icon">👀</span>Admin Reviews</div>
+                <div class="flow-step"><span class="fs-icon">✅</span>Approved / Rejected</div>
+                <div class="flow-step"><span class="fs-icon">📄</span>Booking Confirmed</div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">💳</div><div class="stat-info"><div class="stat-value" id="pyTotal">0</div><div class="stat-label">Total Payments</div></div></div>
+                <div class="stat-card"><div class="stat-icon amber">⏳</div><div class="stat-info"><div class="stat-value" id="pyPending">0</div><div class="stat-label">Pending</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">✅</div><div class="stat-info"><div class="stat-value" id="pyVerified">0</div><div class="stat-label">Verified</div></div></div>
+                <div class="stat-card"><div class="stat-icon coral">❌</div><div class="stat-info"><div class="stat-value" id="pyRejected">0</div><div class="stat-label">Rejected</div></div></div>
+                <div class="stat-card"><div class="stat-icon cyan">💰</div><div class="stat-info"><div class="stat-value" id="pyRevenue">0</div><div class="stat-label">Total (LKR K)</div></div></div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="search-wrap" style="flex:1">
+                    <span class="search-icon">🔍</span>
+                    <input class="form-control" type="text" id="searchInput" placeholder="Search payments…" oninput="renderPayments()"/>
+                </div>
+                <select class="form-control" id="statusFilter" onchange="renderPayments()">
+                    <option value="">All Status</option>
+                    <option>pending</option><option>verified</option><option>rejected</option>
+                </select>
+                <select class="form-control" id="typeFilter" onchange="renderPayments()">
+                    <option value="">All Types</option><option>booking</option><option>rental</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Pay ID</th><th>Related</th><th>Type</th><th>Method</th><th>Amount</th><th>Date</th><th>Slip</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="paymentsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slip View Modal -->
+<div class="modal-overlay" id="slipModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Payment Slip</span><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+            <div id="slipBody"></div>
+        </div>
+        <div class="modal-footer" id="slipFooter"></div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let payments = [...DB.payments];
+
+    function renderPayments() {
+        const q  = document.getElementById('searchInput').value.toLowerCase();
+        const st = document.getElementById('statusFilter').value;
+        const tp = document.getElementById('typeFilter').value;
+
+        const filtered = payments.filter(p =>
+            (p.id.toLowerCase().includes(q) || p.relatedId.toLowerCase().includes(q)) &&
+            (!st || p.status===st) && (!tp || p.type===tp)
+        );
+
+        document.getElementById('paymentsTable').innerHTML = filtered.length ? filtered.map(p=>`
+    <tr>
+      <td class="text-mono text-xs text-teal">${p.id}</td>
+      <td class="text-mono text-xs">${p.relatedId}</td>
+      <td><span class="badge ${p.type==='booking'?'badge-active':'badge-trainer'}">${p.type}</span></td>
+      <td class="text-sm text-muted">${p.method}</td>
+      <td class="text-teal font-bold">${fmtCurrency(p.amount)}</td>
+      <td class="text-sm">${fmtDate(p.date)}</td>
+      <td>
+        <div class="slip-preview" title="View slip" onclick="viewSlip('${p.id}')">🧾</div>
+      </td>
+      <td>${statusBadge(p.status)}</td>
+      <td><div class="action-group">
+        ${p.status==='pending' ? `
+          <button class="btn btn-success btn-sm" onclick="verifyPayment('${p.id}')">✓ Verify</button>
+          <button class="btn btn-danger btn-sm"  onclick="rejectPayment('${p.id}')">✕ Reject</button>
+        ` : `<button class="btn btn-ghost btn-sm" onclick="viewSlip('${p.id}')">View Slip</button>`}
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">💳</div><h3>No payments found</h3></div></td></tr>`;
+
+        document.getElementById('pyTotal').textContent   = payments.length;
+        document.getElementById('pyPending').textContent = payments.filter(p=>p.status==='pending').length;
+        document.getElementById('pyVerified').textContent= payments.filter(p=>p.status==='verified').length;
+        document.getElementById('pyRejected').textContent= payments.filter(p=>p.status==='rejected').length;
+        const rev = payments.filter(p=>p.status==='verified').reduce((a,p)=>a+p.amount,0);
+        document.getElementById('pyRevenue').textContent = (rev/1000).toFixed(1)+'K';
+    }
+
+    function viewSlip(id) {
+        const p = payments.find(x=>x.id===id);
+        document.getElementById('slipBody').innerHTML = `
+    <div style="background:rgba(14,165,160,0.07);border:2px dashed var(--border);border-radius:var(--radius-md);
+         padding:40px;text-align:center;margin-bottom:16px;">
+      <div style="font-size:64px;margin-bottom:12px">🧾</div>
+      <div class="text-muted text-sm">Simulated slip: <strong class="text-white">${p.slip}</strong></div>
+      <div class="text-xs text-muted" style="margin-top:6px">In production this would display the actual uploaded image/PDF</div>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:100px;font-family:var(--font-mono)">PAYMENT ID</span><span>${p.id}</span></div>
+      <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:100px;font-family:var(--font-mono)">RELATED TO</span><span>${p.relatedId}</span></div>
+      <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:100px;font-family:var(--font-mono)">AMOUNT</span><span class="text-teal font-bold">${fmtCurrency(p.amount)}</span></div>
+      <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:100px;font-family:var(--font-mono)">METHOD</span><span>${p.method}</span></div>
+      <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:100px;font-family:var(--font-mono)">STATUS</span>${statusBadge(p.status)}</div>
+    </div>`;
+        document.getElementById('slipFooter').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('slipModal')">Close</button>
+    ${p.status==='pending' ? `
+      <button class="btn btn-danger"  onclick="rejectPayment('${p.id}');closeModal('slipModal')">✕ Reject</button>
+      <button class="btn btn-success" onclick="verifyPayment('${p.id}');closeModal('slipModal')">✓ Verify Payment</button>
+    ` : ''}`;
+        openModal('slipModal');
+    }
+
+    function verifyPayment(id) {
+        const p = payments.find(x=>x.id===id); p.status='verified';
+        showToast('Payment verified! Booking status updated.','success'); renderPayments();
+    }
+    function rejectPayment(id) {
+        const p = payments.find(x=>x.id===id); p.status='rejected';
+        showToast('Payment rejected. Player notified.','error'); renderPayments();
+    }
+
+    document.addEventListener('DOMContentLoaded', renderPayments);
+</script>
+</body>
+</html>

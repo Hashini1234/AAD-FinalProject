@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Rentals</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left"><h1>Rentals</h1><div class="breadcrumb">Operations / Rentals</div></div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal('addRentalModal')">+ New Rental</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">🚣</div><div class="stat-info"><div class="stat-value" id="rnTotal">0</div><div class="stat-label">Total Rentals</div></div></div>
+                <div class="stat-card"><div class="stat-icon amber">⏳</div><div class="stat-info"><div class="stat-value" id="rnPending">0</div><div class="stat-label">Pending</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">✅</div><div class="stat-info"><div class="stat-value" id="rnApproved">0</div><div class="stat-label">Approved</div></div></div>
+                <div class="stat-card"><div class="stat-icon cyan">💰</div><div class="stat-info"><div class="stat-value" id="rnRevenue">0</div><div class="stat-label">Revenue (LKR)</div></div></div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="search-wrap" style="flex:1">
+                    <span class="search-icon">🔍</span>
+                    <input class="form-control" type="text" id="searchInput" placeholder="Search rentals…" oninput="renderRentals()"/>
+                </div>
+                <select class="form-control" id="statusFilter" onchange="renderRentals()">
+                    <option value="">All Status</option>
+                    <option>pending</option><option>approved</option><option>completed</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th>Player</th><th>Surfboard</th><th>Start Date</th><th>End Date</th><th>Days</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="rentalsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Rental Modal -->
+<div class="modal-overlay" id="addRentalModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">New Surfboard Rental</span><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Player</label>
+                <select class="form-control">
+                    <option>Select player…</option>
+                    <option>Amara Wijes.</option><option>Dilshan Raj</option><option>Priya Fern.</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Surfboard</label>
+                <select class="form-control" id="rnBoard" onchange="calcTotal()">
+                    <option value="">Select available board…</option>
+                    <option value="1500">Wave Rider Pro – LKR 1,500/day</option>
+                    <option value="800">Foam Rider – LKR 800/day</option>
+                    <option value="1100">Mini Malibu – LKR 1,100/day</option>
+                    <option value="1300">Surf Shark – LKR 1,300/day</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Start Date</label><input class="form-control" type="date" id="rnStart" oninput="calcTotal()"/></div>
+                <div class="form-group"><label class="form-label">End Date</label><input class="form-control" type="date" id="rnEnd" oninput="calcTotal()"/></div>
+            </div>
+            <div class="card" style="padding:16px;background:rgba(14,165,160,0.07);margin-bottom:16px" id="totalCard">
+                <div class="text-xs text-muted">Estimated Total</div>
+                <div class="text-white font-bold" id="totalEstimate" style="font-size:22px;font-family:var(--font-display)">LKR –</div>
+            </div>
+            <p class="text-sm text-muted" style="margin-bottom:12px">📎 Upload advance payment slip to proceed.</p>
+            <div class="upload-zone">
+                <input type="file" accept="image/*,.pdf"/>
+                <div class="upload-icon">🧾</div>
+                <div class="upload-text">Drop payment slip here or <strong>click to browse</strong><br/><span style="font-size:11px">JPG, PNG or PDF</span></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addRentalModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="submitRental()">Submit Rental</button>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let rentals = [...DB.rentals];
+
+    function calcTotal() {
+        const board = document.getElementById('rnBoard').value;
+        const start = new Date(document.getElementById('rnStart').value);
+        const end   = new Date(document.getElementById('rnEnd').value);
+        if (board && start && end && end > start) {
+            const days = Math.ceil((end - start) / (1000*60*60*24));
+            const total = parseInt(board) * days;
+            document.getElementById('totalEstimate').textContent = fmtCurrency(total) + ` (${days} day${days>1?'s':''})`;
+        }
+    }
+
+    function renderRentals() {
+        const q  = document.getElementById('searchInput').value.toLowerCase();
+        const st = document.getElementById('statusFilter').value;
+
+        const filtered = rentals.filter(r =>
+            (r.id.toLowerCase().includes(q) || r.playerName.toLowerCase().includes(q) || r.surfboardName.toLowerCase().includes(q)) &&
+            (!st || r.status===st)
+        );
+
+        document.getElementById('rentalsTable').innerHTML = filtered.length ? filtered.map(r=>`
+    <tr>
+      <td class="text-mono text-xs text-teal">${r.id}</td>
+      <td><div class="flex items-center gap-2">
+        <div class="avatar avatar-coral" style="width:30px;height:30px;font-size:11px">${initials(r.playerName)}</div>
+        ${r.playerName}
+      </div></td>
+      <td class="text-sm">🏊 ${r.surfboardName}</td>
+      <td class="text-sm">${fmtDate(r.startDate)}</td>
+      <td class="text-sm">${fmtDate(r.endDate)}</td>
+      <td class="text-mono text-center">${r.days}d</td>
+      <td class="text-teal font-bold text-sm">${fmtCurrency(r.amount)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td><div class="action-group">
+        ${r.status==='pending' ? `
+          <button class="btn btn-success btn-sm" onclick="approveRental('${r.id}')">✓ Approve</button>
+          <button class="btn btn-danger btn-sm"  onclick="rejectRental('${r.id}')">✕ Reject</button>
+        ` : `<button class="btn btn-ghost btn-sm">View</button>`}
+      </div></td>
+    </tr>`).join('') : `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">🚣</div><h3>No rentals found</h3></div></td></tr>`;
+
+        document.getElementById('rnTotal').textContent   = rentals.length;
+        document.getElementById('rnPending').textContent = rentals.filter(r=>r.status==='pending').length;
+        document.getElementById('rnApproved').textContent= rentals.filter(r=>r.status==='approved').length;
+        const rev = rentals.filter(r=>r.status!=='pending').reduce((a,r)=>a+r.amount,0);
+        document.getElementById('rnRevenue').textContent = (rev/1000).toFixed(0)+'K';
+    }
+
+    function approveRental(id) {
+        const r = rentals.find(x=>x.id===id); r.status='approved';
+        showToast('Rental approved! Inventory updated.','success'); renderRentals();
+    }
+    function rejectRental(id) {
+        const r = rentals.find(x=>x.id===id); r.status='rejected';
+        showToast('Rental rejected','error'); renderRentals();
+    }
+    function submitRental() {
+        showToast('Rental submitted – pending admin verification','success');
+        closeModal('addRentalModal');
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('rnStart').min = today;
+        document.getElementById('rnEnd').min   = today;
+        renderRentals();
+        initUploadZones();
+    });
+</script>
+</body>
+</html>

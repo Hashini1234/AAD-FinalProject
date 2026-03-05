@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Smart Surf – Beach Locations</title>
+    <link rel="stylesheet" href="../Css/style.css"/>
+    <style>
+        .beach-layout { display:grid; grid-template-columns:1fr 320px; gap:20px; }
+        .map-container { position:relative; }
+        .map-placeholder { width:100%; height:480px; border-radius:var(--radius-md); overflow:hidden;
+            border:1px solid var(--border); position:relative; background:var(--ocean-mid); }
+        .map-placeholder iframe { width:100%; height:100%; border:none; }
+        .map-overlay-label { position:absolute; top:12px; left:12px; background:rgba(10,22,40,0.9);
+            padding:8px 14px; border-radius:var(--radius-sm); font-size:12px;
+            border:1px solid var(--border); backdrop-filter:blur(10px); }
+        .beach-list { display:flex; flex-direction:column; gap:12px; }
+        .beach-item { background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-md);
+            padding:16px; cursor:pointer; transition:var(--transition); }
+        .beach-item:hover,.beach-item.selected { border-color:var(--wave-teal); background:rgba(14,165,160,0.1); }
+        .beach-item.selected { box-shadow:0 0 0 2px rgba(14,165,160,0.3); }
+        .beach-name { font-weight:700; color:var(--white); margin-bottom:4px; }
+        .beach-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+        .beach-chip  { font-size:10px; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,0.06);
+            color:var(--text-muted); border:1px solid rgba(255,255,255,0.1); font-family:var(--font-mono); }
+        .diff-beginner    { color:var(--emerald); }
+        .diff-intermediate{ color:var(--amber); }
+        .diff-advanced    { color:var(--coral); }
+        @media(max-width:900px){ .beach-layout{grid-template-columns:1fr;} }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <aside class="sidebar"></aside>
+    <div class="main-content">
+        <header class="top-header">
+            <div class="header-left"><h1>Beach Locations</h1><div class="breadcrumb">Records / Beach Locations</div></div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openModal('addBeachModal')">+ Add Location</button>
+            </div>
+        </header>
+
+        <div class="page-body">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-icon teal">🗺️</div><div class="stat-info"><div class="stat-value" id="bcTotal">0</div><div class="stat-label">Locations</div></div></div>
+                <div class="stat-card"><div class="stat-icon emerald">✅</div><div class="stat-info"><div class="stat-value" id="bcActive">0</div><div class="stat-label">Active</div></div></div>
+                <div class="stat-card"><div class="stat-icon amber">🌊</div><div class="stat-info"><div class="stat-value" id="bcBeginner">0</div><div class="stat-label">Beginner Spots</div></div></div>
+                <div class="stat-card"><div class="stat-icon coral">🔥</div><div class="stat-info"><div class="stat-value" id="bcAdvanced">0</div><div class="stat-label">Advanced Spots</div></div></div>
+            </div>
+
+            <div class="beach-layout">
+                <!-- Map -->
+                <div class="map-container">
+                    <div class="map-placeholder">
+                        <!-- Real Google Maps embed for Sri Lanka surf spots -->
+                        <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1300000!2d80.7!3d7.8!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2slk!4v1!5m2!1sen!2slk"
+                                allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                        <div class="map-overlay-label">
+                            🗺️ Google Maps — Sri Lanka Surf Spots
+                        </div>
+                    </div>
+
+                    <!-- Detail Panel -->
+                    <div class="card" style="margin-top:16px" id="beachDetail">
+                        <div class="card-body">
+                            <div class="empty-state" style="padding:24px">
+                                <div class="empty-icon">👆</div>
+                                <p>Select a beach location to see details</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location List -->
+                <div>
+                    <div class="section-header"><span class="section-title">All <span>Locations</span></span></div>
+                    <div class="beach-list" id="beachList"></div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="section-header" style="margin-top:28px"><span class="section-title">Location <span>Management</span></span></div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Name</th><th>Province</th><th>Difficulty</th><th>Wave Height</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody id="beachTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Beach Modal -->
+<div class="modal-overlay" id="addBeachModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Add Beach Location</span><button class="modal-close">✕</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label class="form-label">Beach Name</label><input class="form-control" placeholder="e.g. Unawatuna Beach"/></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Province</label>
+                    <select class="form-control"><option>Southern</option><option>Eastern</option><option>Western</option><option>Northern</option></select>
+                </div>
+                <div class="form-group"><label class="form-label">Difficulty</label>
+                    <select class="form-control"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Wave Height</label><input class="form-control" placeholder="e.g. 2-4ft"/></div>
+                <div class="form-group"><label class="form-label">Status</label>
+                    <select class="form-control"><option>active</option><option>inactive</option></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Latitude</label><input class="form-control" type="number" step="0.0001" placeholder="e.g. 6.0167"/></div>
+                <div class="form-group"><label class="form-label">Longitude</label><input class="form-control" type="number" step="0.0001" placeholder="e.g. 80.2500"/></div>
+            </div>
+            <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" placeholder="Brief description of this surf spot…"></textarea></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addBeachModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="addBeach()">Add Location</button>
+        </div>
+    </div>
+</div>
+
+<script src="../Css/App.js"></script>
+<script>
+    let beaches = [...DB.beaches];
+    let selectedBeachId = null;
+
+    const diffClass = { Beginner:'diff-beginner', Intermediate:'diff-intermediate', Advanced:'diff-advanced' };
+    const diffEmoji = { Beginner:'🟢', Intermediate:'🟡', Advanced:'🔴' };
+    const waveEmoji = '🌊';
+
+    function renderBeaches() {
+        // Side list
+        document.getElementById('beachList').innerHTML = beaches.map(b=>`
+    <div class="beach-item ${selectedBeachId===b.id?'selected':''}" onclick="selectBeach(${b.id})">
+      <div class="beach-name">${b.name}</div>
+      <div class="text-xs text-muted">${b.province} Province</div>
+      <div class="beach-chips">
+        <span class="beach-chip">${diffEmoji[b.difficulty]} ${b.difficulty}</span>
+        <span class="beach-chip">${waveEmoji} ${b.waves}</span>
+        <span class="beach-chip">${b.status==='active'?'✅':'❌'} ${b.status}</span>
+      </div>
+    </div>`).join('');
+
+        // Table
+        document.getElementById('beachTable').innerHTML = beaches.map(b=>`
+    <tr>
+      <td><strong>${b.name}</strong></td>
+      <td class="text-sm text-muted">${b.province}</td>
+      <td><span class="${diffClass[b.difficulty]} text-sm font-bold">${diffEmoji[b.difficulty]} ${b.difficulty}</span></td>
+      <td class="text-mono text-sm">${b.waves}</td>
+      <td>${statusBadge(b.status)}</td>
+      <td><div class="action-group">
+        <button class="btn btn-ghost btn-sm" onclick="selectBeach(${b.id})">📍 View</button>
+        <button class="btn btn-outline btn-sm" onclick="openModal('addBeachModal')">✏️</button>
+        <button class="btn btn-${b.status==='active'?'danger':'success'} btn-sm" onclick="toggleBeach(${b.id})">
+          ${b.status==='active'?'Deactivate':'Activate'}
+        </button>
+      </div></td>
+    </tr>`).join('');
+
+        // Stats
+        document.getElementById('bcTotal').textContent   = beaches.length;
+        document.getElementById('bcActive').textContent  = beaches.filter(b=>b.status==='active').length;
+        document.getElementById('bcBeginner').textContent= beaches.filter(b=>b.difficulty==='Beginner').length;
+        document.getElementById('bcAdvanced').textContent= beaches.filter(b=>b.difficulty==='Advanced').length;
+    }
+
+    function selectBeach(id) {
+        selectedBeachId = id;
+        const b = beaches.find(x=>x.id===id);
+        document.getElementById('beachDetail').innerHTML = `
+    <div class="card-header"><span class="card-title">📍 ${b.name}</span>${statusBadge(b.status)}</div>
+    <div class="card-body">
+      <p class="text-sm text-muted" style="margin-bottom:14px">${b.description}</p>
+      <div style="display:grid;gap:8px">
+        <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:80px;font-family:var(--font-mono)">PROVINCE</span><span class="text-sm">${b.province}</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:80px;font-family:var(--font-mono)">DIFFICULTY</span><span class="${diffClass[b.difficulty]} text-sm font-bold">${b.difficulty}</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:80px;font-family:var(--font-mono)">WAVES</span><span class="text-sm text-mono">${b.waves}</span></div>
+        <div class="flex items-center gap-3"><span class="text-xs text-muted" style="width:80px;font-family:var(--font-mono)">COORDS</span><span class="text-xs text-mono text-muted">${b.lat}, ${b.lng}</span></div>
+      </div>
+      <div class="action-group" style="margin-top:14px">
+        <a href="https://www.google.com/maps?q=${b.lat},${b.lng}" target="_blank" class="btn btn-primary btn-sm" style="flex:1">🗺️ Open in Maps</a>
+      </div>
+    </div>`;
+        renderBeaches();
+    }
+
+    function toggleBeach(id) {
+        const b = beaches.find(x=>x.id===id);
+        b.status = b.status==='active' ? 'inactive' : 'active';
+        showToast(`Beach ${b.status==='active'?'activated':'deactivated'}`,'info');
+        renderBeaches();
+    }
+
+    function addBeach() { showToast('Beach location added!','success'); closeModal('addBeachModal'); }
+
+    document.addEventListener('DOMContentLoaded', renderBeaches);
+</script>
+</body>
+</html>
