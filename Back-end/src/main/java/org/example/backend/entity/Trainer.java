@@ -8,7 +8,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "trainers")
 public class Trainer {
 
     @Id
@@ -19,18 +18,18 @@ public class Trainer {
 
     private String email;
 
+    private String phone;
+
     private String specialty;
 
     private int experience;
-
-    private String phone;
-
-    @Column(length = 500)
-    private String bio;
 
     private double rating;
 
     private int sessions;
 
-    private String status; // available , busy
+    private String status; // available / busy
+
+    @Column(length = 1000)
+    private String bio;
 }

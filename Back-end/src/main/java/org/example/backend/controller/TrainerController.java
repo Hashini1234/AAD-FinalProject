@@ -1,6 +1,6 @@
 package org.example.backend.controller;
 
-import org.example.backend.entity.Trainer;
+import org.example.backend.dto.TrainerDTO;
 import org.example.backend.service.TrainerService;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,28 +13,25 @@ public class TrainerController {
 
     private final TrainerService trainerService;
 
+    // ✅ Constructor Injection
     public TrainerController(TrainerService trainerService) {
         this.trainerService = trainerService;
     }
 
     @PostMapping
-    public Trainer addTrainer(@RequestBody Trainer trainer){
-        return trainerService.saveTrainer(trainer);
+    public TrainerDTO saveTrainer(@RequestBody TrainerDTO dto){
+        return trainerService.saveTrainer(dto);
     }
 
     @GetMapping
-    public List<Trainer> getAllTrainers(){
+    public List<TrainerDTO> getAll(){
         return trainerService.getAllTrainers();
     }
 
-    @GetMapping("/{id}")
-    public Trainer getTrainer(@PathVariable Long id){
-        return trainerService.getTrainerById(id);
-    }
-
     @PutMapping("/{id}")
-    public Trainer updateTrainer(@PathVariable Long id, @RequestBody Trainer trainer){
-        return trainerService.updateTrainer(id,trainer);
+    public TrainerDTO updateTrainer(@PathVariable Long id,
+                                    @RequestBody TrainerDTO dto){
+        return trainerService.updateTrainer(id,dto);
     }
 
     @DeleteMapping("/{id}")

@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/AAD-Surfboard-Management-Training System.iml" filepath="$PROJECT_DIR$/AAD-Surfboard-Management-Training System.iml" />
-      <module fileurl="file://$PROJECT_DIR$/Back-end/Back-end.iml" filepath="$PROJECT_DIR$/Back-end/Back-end.iml" />
     </modules>
   </component>
 </project>
