@@ -38,11 +38,11 @@
             <p style="font-size:12px;letter-spacing:2px;color:var(--text-muted);margin-top:4px;font-family:var(--font-mono)">MANAGEMENT SYSTEM</p>
         </div>
 
-        <div class="role-tabs">
-            <button class="role-tab active" data-role="ADMIN"   onclick="setRole(this,'ADMIN')">Admin</button>
-            <button class="role-tab"        data-role="TRAINER" onclick="setRole(this,'TRAINER')">Trainer</button>
-            <button class="role-tab"        data-role="PLAYER"  onclick="setRole(this,'PLAYER')">Player</button>
-        </div>
+<!--        <div class="role-tabs">-->
+<!--            <button class="role-tab active" data-role="ADMIN"   onclick="setRole(this,'ADMIN')">Admin</button>-->
+<!--            <button class="role-tab"        data-role="TRAINER" onclick="setRole(this,'TRAINER')">Trainer</button>-->
+<!--            <button class="role-tab"        data-role="PLAYER"  onclick="setRole(this,'PLAYER')">Player</button>-->
+<!--        </div>-->
 
         <div id="loginPanel">
             <h2 class="auth-title">Welcome Back 👋</h2>
@@ -50,11 +50,11 @@
 
             <div class="form-group">
                 <label class="form-label">Email Address</label>
-                <input class="form-control" type="email" id="emailInput" placeholder="you@smartsurf.lk" value="admin@smartsurf.lk"/>
+                <input class="form-control" type="email" id="emailInput" placeholder="you@smartsurf.lk" />
             </div>
             <div class="form-group">
                 <label class="form-label">Password</label>
-                <input class="form-control" type="password" id="passInput" placeholder="••••••••" value="••••••••"/>
+                <input class="form-control" type="password" id="passInput" placeholder="••••••••"/>
             </div>
 
             <div class="flex items-center gap-2" style="margin-bottom:20px;justify-content:space-between;">
@@ -79,7 +79,7 @@
 
 <script src="../Css/App.js"></script>
 <script>
-    let selectedRole = 'ADMIN';
+   /* let selectedRole = 'ADMIN';
 
     function setRole(el, role) {
         document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
@@ -88,17 +88,12 @@
         document.getElementById('roleLabel').textContent = role.charAt(0) + role.slice(1).toLowerCase();
         const presets = { ADMIN:'admin@smartsurf.lk', TRAINER:'kasun@smartsurf.lk', PLAYER:'amara@gmail.com' };
         document.getElementById('emailInput').value = presets[role] || '';
-    }
+    }*/
 
-    function doLogin() {
-        const email = document.getElementById('emailInput').value;
-        if (!email) { showToast('Please enter your email', 'error'); return; }
-        showToast('Authenticating with JWT…', 'info');
-        setTimeout(() => {
-            showToast('Login successful! Redirecting…', 'success');
-            setTimeout(() => window.location.href = 'dashboard.html', 800);
-        }, 900);
-    }
+
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../js/login.js"></script>
 </body>
 </html>
