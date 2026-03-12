@@ -13,20 +13,17 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long userId;
 
     private String username;   // used as Full Name in UI
 
     private String password;   // BCrypt encrypted
 
+    @Column(unique = true)
     private String email;      // Add Trainer modal — Email field
 
     private String phone;      // Add Trainer modal — Phone field
 
-    @Enumerated(EnumType.STRING)
-    private Role role;         // ADMIN / USER / TRAINER
+    private String  role;         // ADMIN / USER / TRAINER
 
-    // Bi-directional link — one User can have one Trainer profile
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Trainer trainer;
 }
